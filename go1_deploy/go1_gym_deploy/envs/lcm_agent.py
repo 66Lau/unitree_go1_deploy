@@ -144,15 +144,12 @@ class LCMAgent():
     def get_obs(self):
 
         self.gravity_vector = self.se.get_gravity_vector()
-        # print("no reshape",self.gravity_vector )
-        # print("reshape",self.gravity_vector.reshape(1,-1) )
 
         cmds, reset_timer = self.command_profile.get_command(self.timestep * self.dt, probe=self.is_currently_probing)
         self.commands[:, :] = [cmds[:self.num_commands]]
         if reset_timer:
             self.reset_gait_indices()
-        #else:
-        #    self.commands[:, 0:3] = self.command_profile.get_command(self.timestep * self.dt)[0:3]
+
         self.imu_obs= self.se.get_rpy()
         self.dof_pos = self.se.get_dof_pos()
         self.dof_vel= self.se.get_dof_vel()
@@ -168,16 +165,7 @@ class LCMAgent():
                             self.dof_vel.reshape(1,-1) * self.obs_scales_dof_vel,
                             self.actions.cpu().detach().numpy().reshape(1,-1),
                             ),axis=1)
-        
-        # set priv_obs zeros
-        priv_explicit = np.zeros(self.num_obs_priv)
 
-        priv_latent = np.zeros(self.num_obs_n_priv_latent)
-        
-        heights = np.zeros(self.num_obs_scan)
-
-        self.obs_buf = np.concatenate((obs_buf,  priv_explicit.reshape(1,-1), heights.reshape(1,-1), priv_latent.reshape(1,-1), self.obs_history_buf.reshape(1,-1)), axis=1)
-                
         self.obs_history_buf = np.where(
             (self.timestep <= 1),
             np.stack([obs_buf] * self.obs_history_len, axis=1),
@@ -186,6 +174,9 @@ class LCMAgent():
                 obs_buf[:,np.newaxis]
             ], axis=1)
         )
+
+        self.obs_buf = self.obs_history_buf.reshape(1,-1)
+
         clip_obs = 100
         self.obs_buf = np.clip(self.obs_buf, -clip_obs, clip_obs)
 
