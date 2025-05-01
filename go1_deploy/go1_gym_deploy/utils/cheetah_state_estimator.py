@@ -52,9 +52,9 @@ class StateEstimator:
     def __init__(self, lc, use_cameras=True):
 
         # reverse legs
-        # self.joint_idxs = [3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8]
+        self.joint_idxs = [3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8]
         self.contact_idxs = [1, 0, 3, 2]
-        self.joint_idxs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        # self.joint_idxs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
         self.lc = lc
 

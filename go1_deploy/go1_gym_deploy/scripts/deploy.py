@@ -6,6 +6,7 @@ import sys
 from go1_gym_deploy.utils.deployment_runner import DeploymentRunner
 from go1_gym_deploy.envs.lcm_agent import LCMAgent
 from go1_gym_deploy.envs.actor_critic import *
+from go1_gym_deploy.envs.him_actor_critic import *
 from go1_gym_deploy.utils.cheetah_state_estimator import StateEstimator
 from go1_gym_deploy.utils.command_profile import *
 from copy import copy, deepcopy
@@ -34,7 +35,7 @@ def load_and_run_policy(label, experiment_name, max_vel=1.0, max_yaw_vel=1.0):
     from go1_gym_deploy.envs.history_wrapper import HistoryWrapper
     hardware_agent = HistoryWrapper(hardware_agent)
 
-    policy = load_policy(logdir, py_name = '/model_1300.pt')
+    policy = load_policy(logdir, py_name = '/model_680.pt')
 
     # load runner
     root = f"{pathlib.Path(__file__).parent.resolve()}/../../logs/"
@@ -42,10 +43,8 @@ def load_and_run_policy(label, experiment_name, max_vel=1.0, max_yaw_vel=1.0):
     deployment_runner = DeploymentRunner(experiment_name=experiment_name, se=None,
                                          log_root=f"{root}/{experiment_name}")
     deployment_runner.add_control_agent(hardware_agent, "hardware_closed_loop")
-    # 修改
     deployment_runner.add_policy(policy)
-    # deployment_runner.add_policy(policy_recover)
-    # deployment_runner.add_policy(policy2)
+
 
     deployment_runner.add_command_profile(command_profile)
 
@@ -57,19 +56,18 @@ def load_and_run_policy(label, experiment_name, max_vel=1.0, max_yaw_vel=1.0):
 
     deployment_runner.run(max_steps=max_steps, logging=True)
 
-# 修改
 def load_policy(logdir, py_name = '/checkpoint/model_stair.pt'):
     print("load pt: ", py_name)
 
 
     num_actions = 12
-    num_prop= 2 + 3 +3 +  3 + num_actions*3
-    num_hist = 10
-    num_critic_obs = 1136
+    num_prop= 3 +3 +  3 + num_actions*3
+    num_hist = 6
+    num_critic_obs = 238
 
-    ac =  ActorCriticRMA(num_prop=num_prop,
-                        num_critic_obs=num_critic_obs,
-                        num_hist = num_hist,
+    ac =  HIMActorCritic(num_actor_obs = num_prop*num_hist,
+                        num_critic_obs = num_critic_obs,
+                        num_one_step_obs = num_prop,
                         num_actions = num_actions,
                         actor_hidden_dims=[512, 256, 128],
                         critic_hidden_dims=[512, 256, 128],

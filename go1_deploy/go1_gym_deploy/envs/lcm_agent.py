@@ -40,11 +40,8 @@ class LCMAgent():
         self.dt = 0.02
 
         self.num_envs = 1
-        self.num_obs_scan =  17*11
-        self.num_obs_priv = 9
-        self.num_obs_n_priv_latent = 4+1+12+12
-        self.num_obs_proprio = 47
-        self.obs_history_len = 10
+        self.num_obs_proprio = 45
+        self.obs_history_len = 6
         self.num_obs = 47+ 17*11 + (10*47) + 4+1+12+12 + 9 #n_scan + n_proprio + n_priv #187 + 47 + 5 + 12 
         self.num_actions = 12
         self.num_commands = 3
@@ -56,6 +53,7 @@ class LCMAgent():
              0.25
              ])[:self.num_commands]
 
+        # HIM sequence
         real_joint_names_sequence = [
             "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
             "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
@@ -64,7 +62,7 @@ class LCMAgent():
             
              ]
 
-
+        # my training sequence
         sim_joint_names_sequence = [
             "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
             "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
@@ -157,10 +155,9 @@ class LCMAgent():
         self.body_angular_vel = self.se.get_body_angular_vel()
         self.contact_state = self.se.get_contact_state()
         obs_buf = np.concatenate((#skill_vector, 
-                            self.imu_obs[:2].reshape(1,-1),
-                            self.body_angular_vel.reshape(1,-1) * self.obs_scales_ang_vel,   #[1,3]
-                            self.gravity_vector.reshape(1,-1),
                             self.commands[:,:]*self.commands_scale,  #[1,3]
+                            self.body_angular_vel.reshape(1,-1) * self.obs_scales_ang_vel, 
+                            self.gravity_vector.reshape(1,-1),
                             (self.dof_pos - self.default_dof_pos).reshape(1,-1) * self.obs_scales_dof_pos,
                             self.dof_vel.reshape(1,-1) * self.obs_scales_dof_vel,
                             self.actions.cpu().detach().numpy().reshape(1,-1),
@@ -170,8 +167,8 @@ class LCMAgent():
             (self.timestep <= 1),
             np.stack([obs_buf] * self.obs_history_len, axis=1),
             np.concatenate([
-                self.obs_history_buf[:,1:],
-                obs_buf[:,np.newaxis]
+                obs_buf[:,np.newaxis],
+                self.obs_history_buf[:,:-1]
             ], axis=1)
         )
 
