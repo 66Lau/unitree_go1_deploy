@@ -35,7 +35,7 @@ def load_and_run_policy(label, experiment_name, max_vel=1.0, max_yaw_vel=1.0):
     from go1_gym_deploy.envs.history_wrapper import HistoryWrapper
     hardware_agent = HistoryWrapper(hardware_agent)
 
-    policy = load_policy(logdir, py_name = '/model_680.pt')
+    policy = load_policy(logdir, py_name = '/model_10860.pt')
 
     # load runner
     root = f"{pathlib.Path(__file__).parent.resolve()}/../../logs/"
