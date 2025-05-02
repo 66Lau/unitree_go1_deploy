@@ -35,6 +35,9 @@ public:
     UDP udp;
     LowCmd cmd = {0};
     LowState state = {0};
+    LowState last_state = {0};
+    int stagnant_counter = 0;
+    const int stagnant_threshold = 40;
     float qInit[3]={0};
     float qDes[3]={0};
     float sin_mid_q[3] = {0.0, 1.2, -2.0};
@@ -98,6 +101,30 @@ void Custom::init()
 void Custom::UDPRecv()
 {
     udp.Recv();
+
+    // Compare with last_state
+    bool unchanged = true;
+    for (int i = 0; i < 12; i++) {
+        if (fabs(state.motorState[i].q - last_state.motorState[i].q) > 1e-6 ||
+            fabs(state.motorState[i].dq - last_state.motorState[i].dq) > 1e-6) {
+            unchanged = false;
+            break;
+        }
+    }
+
+    if (unchanged) {
+        stagnant_counter++;
+    } else {
+        stagnant_counter = 0;
+    }
+
+    if (stagnant_counter >= stagnant_threshold) {
+        std::cerr << "[ERROR] Communication stalled — terminating." << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    // Update last_state
+    last_state = state;
 }
 
 void Custom::UDPSend()
