@@ -88,6 +88,7 @@ class LCMAgent():
         print(f"p_gains: {self.p_gains}")
 
         self.commands = np.zeros((1, self.num_commands))
+        self.filtered_commands = np.zeros((1, self.num_commands))
         self.imu_obs = np.zeros(3)
         self.actions = torch.zeros(12)
         self.last_actions = torch.zeros(12)
@@ -145,6 +146,8 @@ class LCMAgent():
 
         cmds, reset_timer = self.command_profile.get_command(self.timestep * self.dt, probe=self.is_currently_probing)
         self.commands[:, :] = [cmds[:self.num_commands]]
+        print("robot command:", self.commands)
+        self.filtered_commands[:, :] = 0.8 * self.filtered_commands[:, :] + 0.2 * self.commands[:, :]
         if reset_timer:
             self.reset_gait_indices()
 
@@ -155,9 +158,11 @@ class LCMAgent():
         self.body_angular_vel = self.se.get_body_angular_vel()
         self.contact_state = self.se.get_contact_state()
         obs_buf = np.concatenate((#skill_vector, 
-                            self.commands[:,:]*self.commands_scale,  #[1,3]
-                            self.body_angular_vel.reshape(1,-1) * self.obs_scales_ang_vel, 
+
+                            self.imu_obs[:2].reshape(1,-1),
+                            self.body_angular_vel.reshape(1,-1) * self.obs_scales_ang_vel,   #[1,3]
                             self.gravity_vector.reshape(1,-1),
+                            self.filtered_commands[:,:]*self.commands_scale,  #[1,3]
                             (self.dof_pos - self.default_dof_pos).reshape(1,-1) * self.obs_scales_dof_pos,
                             self.dof_vel.reshape(1,-1) * self.obs_scales_dof_vel,
                             self.actions.cpu().detach().numpy().reshape(1,-1),

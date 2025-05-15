@@ -7,6 +7,7 @@ import numpy as np
 
 from go1_gym_deploy.lcm_types.leg_control_data_lcmt import leg_control_data_lcmt
 from go1_gym_deploy.lcm_types.rc_command_lcmt import rc_command_lcmt
+from go1_gym_deploy.lcm_types.rc_command_lcmt_relay import rc_command_lcmt_relay
 from go1_gym_deploy.lcm_types.state_estimator_lcmt import state_estimator_lcmt
 from go1_gym_deploy.lcm_types.camera_message_lcmt import camera_message_lcmt
 from go1_gym_deploy.lcm_types.camera_message_rect_wide import camera_message_rect_wide
@@ -109,6 +110,7 @@ class StateEstimator:
 
         self.imu_subscription = self.lc.subscribe("state_estimator_data", self._imu_cb)
         self.legdata_state_subscription = self.lc.subscribe("leg_control_data", self._legdata_cb)
+        self.rc_command_subscription = self.lc.subscribe("rc_command_relay", self._rc_command_relay_cb)
         self.rc_command_subscription = self.lc.subscribe("rc_command", self._rc_command_cb)
 
         if use_cameras:
@@ -159,7 +161,7 @@ class StateEstimator:
 
         # always in use
         cmd_x = 0.5 * self.left_stick[1]
-        cmd_yaw = -1 * self.right_stick[0]
+        cmd_yaw = 2 * self.right_stick[0]
 
         # default values
         cmd_y = -1 * self.left_stick[0]  # -1 * self.left_stick[0]
@@ -305,8 +307,8 @@ class StateEstimator:
         self.right_lower_right_switch_pressed = ((msg.right_lower_right_switch and not self.right_lower_right_switch) or self.right_lower_right_switch_pressed)
 
         self.mode = msg.mode
-        self.right_stick = msg.right_stick
-        self.left_stick = msg.left_stick
+        # self.right_stick = msg.right_stick
+        # self.left_stick = msg.left_stick
         self.left_upper_switch = msg.left_upper_switch
         self.left_lower_left_switch = msg.left_lower_left_switch
         self.left_lower_right_switch = msg.left_lower_right_switch
@@ -314,7 +316,32 @@ class StateEstimator:
         self.right_lower_left_switch = msg.right_lower_left_switch
         self.right_lower_right_switch = msg.right_lower_right_switch
 
-        # print(self.right_stick, self.left_stick)
+        # print("command from rc: ", self.right_stick, self.left_stick)
+
+
+    def _rc_command_relay_cb(self, channel, data):
+
+        msg = rc_command_lcmt_relay.decode(data)
+
+        self.left_upper_switch_pressed = ((msg.left_upper_switch and not self.left_upper_switch) or self.left_upper_switch_pressed)
+        self.left_lower_left_switch_pressed = ((msg.left_lower_left_switch and not self.left_lower_left_switch) or self.left_lower_left_switch_pressed)
+        self.left_lower_right_switch_pressed = ((msg.left_lower_right_switch and not self.left_lower_right_switch) or self.left_lower_right_switch_pressed)
+        self.right_upper_switch_pressed = ((msg.right_upper_switch and not self.right_upper_switch) or self.right_upper_switch_pressed)
+        self.right_lower_left_switch_pressed = ((msg.right_lower_left_switch and not self.right_lower_left_switch) or self.right_lower_left_switch_pressed)
+        self.right_lower_right_switch_pressed = ((msg.right_lower_right_switch and not self.right_lower_right_switch) or self.right_lower_right_switch_pressed)
+
+        self.mode = msg.mode
+        self.right_stick = msg.right_stick
+        self.left_stick = msg.left_stick
+        # self.left_upper_switch = msg.left_upper_switch
+        # self.left_lower_left_switch = msg.left_lower_left_switch
+        # self.left_lower_right_switch = msg.left_lower_right_switch
+        # self.right_upper_switch = msg.right_upper_switch
+        # self.right_lower_left_switch = msg.right_lower_left_switch
+        # self.right_lower_right_switch = msg.right_lower_right_switch
+
+        print("command from relay: ", self.right_stick, self.left_stick)
+
 
     def _camera_cb(self, channel, data):
         msg = camera_message_lcmt.decode(data)

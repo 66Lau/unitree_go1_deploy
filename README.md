@@ -73,6 +73,8 @@ pip install -e .
 - `Ping 192.168.123.15` to validate connection
 - Press `L2 + A`, make robot get down
 - Press `L2 + B`, enter damping mode
+
+1. Deploy in AGX
 ```bash
 # Start communication with Go1
 cd unitree_legged_sdk/build
@@ -82,6 +84,18 @@ conda activate go1_deploy
 cd go1_deploy/go1_gym_deploy/scripts/
 # deploy a well-trained walking policy
 python deploy.py
+```
+
+2. Or deploy in go1 embedded jetson
+```bash
+# first go right branch
+rsync -av --exclude='build' ../unitree_go1_deploy unitree@192.168.123.15:~
+ssh unitree@192.168.123.15
+cd ~/unitree_go1_deploy/unitree_legged_sdk/build
+./lcm_position
+# new terminal
+cd ~/unitree_go1_deploy/go1_deploy/go1_gym_deploy/scripts/
+python3 deploy.py
 ```
 
 
@@ -109,4 +123,89 @@ rs-enumerate-devices -s
 ros2 launch realsense2_camera rs_launch.py serial_no:="'827312072741'"
 # launch T265
 ros2 launch realsense2_camera rs_launch.py serial_no:="'146322110342'"
+```
+
+
+
+# Websocket Relay
+
+### In Server
+For the communication with server to achieve high level policy inference
+
+- Subscrible go1 perception info
+```bash
+# In Server
+sudo apt install ros-humble-compressed-image-transport
+cd websocket
+conda deactivate
+python3 relay2server.py
+```
+
+- Visualization in server rviz
+```bash
+# In Server Visualization
+rviz2 -d websocket/visualize.rviz
+```
+
+- Send expected velocity to relay
+```bash
+# if wifi is open 
+sudo ip route add    224.0.0.0/4 dev eno1    metric 100
+python3 server2relay.py
+ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+```
+
+### In Relay
+
+- Relay Camera information
+```bash
+ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+ros2 launch realsense2_camera rs_launch.py serial_no:="'827312072741'"
+ros2 launch realsense2_camera rs_launch.py serial_no:="'146322110342'"
+# or 
+ros2 launch realsense2_camera rs_launch.py depth_module.profile:=640x480x30 rgb_camera.profile:=640x480x30 align_depth.enable:=true serial_no:="'827312072741'"
+ros2 launch realsense2_camera rs_launch.py serial_no:="'146322110342'"
+```
+
+- Receive velocity message from server and relay to Go1
+```bash
+conda deactivate
+cd websocket
+python3 relay2go1.py
+```
+
+### Final Command
+
+Perception
+```bash
+# 1
+ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+# 2
+python3 websocket/relay2server_socket.py
+# 3
+ros2 launch realsense2_camera rs_launch.py depth_module.profile:=640x480x30 rgb_camera.profile:=640x480x30 align_depth.enable:=true serial_no:="'827312072741'"
+#4
+ros2 launch realsense2_camera rs_launch.py serial_no:="'146322110342'"
+
+```
+
+
+Control
+```bash
+# 1.
+sudo ip route add    224.0.0.0/4 dev eno1    metric 100
+python3 websocket/relay2go1.py
+
+# 2. 
+ssh unitree@192.168.123.15
+cd ~/unitree_go1_deploy/unitree_legged_sdk/build
+./lcm_position
+
+# 3.
+ssh unitree@192.168.123.15
+cd ~/unitree_go1_deploy/go1_deploy/go1_gym_deploy/scripts/
+python3 deploy.py
+
+
+
 ```

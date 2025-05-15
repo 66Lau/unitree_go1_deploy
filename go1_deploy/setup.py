@@ -9,6 +9,6 @@ setup(
     packages=find_packages(),
     author_email='gmargo@mit.edu',
     description='Toolkit for deployment of sim-to-real RL on the Unitree Go1.',
-    install_requires=['lcm==1.5.1',
-                      'numpy==1.23.5',]
+    # install_requires=['lcm==1.5.1',
+    #                   'numpy==1.23.5',]
 )

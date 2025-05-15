@@ -37,7 +37,7 @@ public:
     LowState state = {0};
     LowState last_state = {0};
     int stagnant_counter = 0;
-    const int stagnant_threshold = 40;
+    const int stagnant_threshold = 20;
     float qInit[3]={0};
     float qDes[3]={0};
     float sin_mid_q[3] = {0.0, 1.2, -2.0};
